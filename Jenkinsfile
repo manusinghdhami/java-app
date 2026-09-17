@@ -51,11 +51,11 @@ pipeline {
                         git clone $MANIFEST_REPO manifests-repo
                         cd manifests-repo
 
-                        sed -i "s#image: .*#image: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG#" deployment.yaml
+                        sed -i "s/tag: .*/tag: \\"$IMAGE_TAG\\"/" values.yaml
 
                         git config user.email "jenkins@ci.local"
                         git config user.name "Jenkins CI"
-                        git add deployment.yaml
+                        git add values.yaml
                         git commit -m "Update image to tag $IMAGE_TAG"
                         git push origin main
                     '''
