@@ -11,7 +11,7 @@ public class App {
 
     @GetMapping("/")
     public String home() {
-        return "Hello from Java CI/CD on EKS via ArgoCD! Build v3:Latest";
+        return "Hello from Java CI/CD on EKS via ArgoCD! Build v4:Final";
     }
 
     public static void main(String[] args) {
