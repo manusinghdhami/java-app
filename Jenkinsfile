@@ -45,6 +45,8 @@ pipeline {
             steps {
                 sshagent(['manifests-repo-ssh-key']) {
                     sh '''
+		    	export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no"
+
                         rm -rf manifests-repo
                         git clone $MANIFEST_REPO manifests-repo
                         cd manifests-repo
