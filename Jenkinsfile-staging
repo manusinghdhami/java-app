@@ -11,6 +11,12 @@ pipeline {
 
     stages {
 
+	stage('Cleanup Old Docker Artifacts') {
+            steps {
+                sh 'docker system prune -af --filter "until=12h"'
+            }
+        }
+
         stage('Checkout App Code') {
             steps {
                 git branch: 'main', url: 'https://github.com/manusinghdhami/java-app.git'
