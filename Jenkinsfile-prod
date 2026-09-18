@@ -1,0 +1,59 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'IMAGE_TAG', defaultValue: '', description: 'ECR image tag to promote (must already exist in ECR — check staging build output)')
+    }
+
+    environment {
+        AWS_ACCOUNT_ID   = "423671573887"
+        AWS_REGION       = "ap-south-1"
+        ECR_REPO         = "java-cicd-app"
+        MANIFEST_REPO    = "git@github.com:<your-username>/java-app-manifests.git"
+    }
+
+    stages {
+
+        stage('Verify Image Exists in ECR') {
+            steps {
+                sh '''
+                    aws ecr describe-images \
+                        --repository-name $ECR_REPO \
+                        --region $AWS_REGION \
+                        --image-ids imageTag=$IMAGE_TAG
+                '''
+            }
+        }
+
+        stage('Deploy to Production') {
+            steps {
+                sshagent(['manifests-repo-ssh-key']) {
+                    sh '''
+                        export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no"
+
+                        rm -rf manifests-repo-prod
+                        git clone $MANIFEST_REPO manifests-repo-prod
+                        cd manifests-repo-prod
+
+                        sed -i "s/tag: .*/tag: \\"$IMAGE_TAG\\"/" values-prod.yaml
+
+                        git config user.email "jenkins@ci.local"
+                        git config user.name "Jenkins CI"
+                        git add values-prod.yaml
+                        git commit -m "Promote build $IMAGE_TAG to production"
+                        git push origin main
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Build ${params.IMAGE_TAG} promoted to production."
+        }
+        failure {
+            echo "Promotion failed — check whether IMAGE_TAG actually exists in ECR."
+        }
+    }
+}

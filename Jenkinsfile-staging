@@ -1,0 +1,75 @@
+pipeline {
+    agent any
+
+    environment {
+        AWS_ACCOUNT_ID   = "423671573887"
+        AWS_REGION       = "ap-south-1"
+        ECR_REPO         = "java-cicd-app"
+        IMAGE_TAG        = "${BUILD_NUMBER}"
+        MANIFEST_REPO    = "git@github.com:<your-username>/java-app-manifests.git"
+    }
+
+    stages {
+
+        stage('Checkout App Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/<your-username>/java-app.git'
+            }
+        }
+
+        stage('Maven Build & Test') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh "docker build -t ${ECR_REPO}:${IMAGE_TAG} ."
+            }
+        }
+
+        stage('Push to ECR') {
+            steps {
+                sh '''
+                    aws ecr get-login-password --region $AWS_REGION | \
+                    docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+
+                    docker tag $ECR_REPO:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG
+                    docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG
+                '''
+            }
+        }
+
+        stage('Deploy to Staging') {
+            steps {
+                sshagent(['manifests-repo-ssh-key']) {
+                    sh '''
+                        export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no"
+
+                        rm -rf manifests-repo
+                        git clone $MANIFEST_REPO manifests-repo
+                        cd manifests-repo
+
+                        sed -i "s/tag: .*/tag: \\"$IMAGE_TAG\\"/" values-staging.yaml
+
+                        git config user.email "jenkins@ci.local"
+                        git config user.name "Jenkins CI"
+                        git add values-staging.yaml
+                        git commit -m "Deploy build $IMAGE_TAG to staging"
+                        git push origin main
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Build ${IMAGE_TAG} deployed to staging. To promote to prod, run java-cicd-app-prod-promote with IMAGE_TAG=${IMAGE_TAG}."
+        }
+        failure {
+            echo "Staging pipeline failed - check logs."
+        }
+    }
+}
