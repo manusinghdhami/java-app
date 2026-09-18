@@ -6,14 +6,14 @@ pipeline {
         AWS_REGION       = "ap-south-1"
         ECR_REPO         = "java-cicd-app"
         IMAGE_TAG        = "${BUILD_NUMBER}"
-        MANIFEST_REPO    = "git@github.com:<your-username>/java-app-manifests.git"
+        MANIFEST_REPO    = "git@github.com:manusinghdhami/java-app-manifests.git"
     }
 
     stages {
 
         stage('Checkout App Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/<your-username>/java-app.git'
+                git branch: 'main', url: 'https://github.com/manusinghdhami/java-app.git'
             }
         }
 

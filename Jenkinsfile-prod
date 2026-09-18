@@ -9,7 +9,7 @@ pipeline {
         AWS_ACCOUNT_ID   = "423671573887"
         AWS_REGION       = "ap-south-1"
         ECR_REPO         = "java-cicd-app"
-        MANIFEST_REPO    = "git@github.com:<your-username>/java-app-manifests.git"
+        MANIFEST_REPO    = "git@github.com:manusinghdhami/java-app-manifests.git"
     }
 
     stages {
