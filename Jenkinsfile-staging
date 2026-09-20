@@ -13,7 +13,7 @@ pipeline {
 
 	stage('Cleanup Old Docker Artifacts') {
             steps {
-                sh 'docker system prune -af --filter "until=12h"'
+                sh 'docker system prune -af --filter "until=24h"'
             }
         }
 
